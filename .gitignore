@@ -5,3 +5,4 @@ logs
 target/
 */*.iml
 */pid
+data

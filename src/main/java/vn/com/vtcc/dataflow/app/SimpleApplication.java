@@ -8,11 +8,11 @@ import vn.com.vtcc.dataflow.flow.sink.io.FileIO;
 import vn.com.vtcc.dataflow.flow.source.StreamSource;
 import vn.com.vtcc.dataflow.flow.source.io.FileStreamIO;
 
-public class Application {
+public class SimpleApplication {
 
     private StreamFlow flow;
 
-    public Application() {
+    public SimpleApplication() {
         this.flow = new StreamFlow();
     }
 
@@ -33,6 +33,6 @@ public class Application {
     }
 
     public static void main(String[] args) {
-        new Application().run();
+        new SimpleApplication().run();
     }
 }

@@ -11,16 +11,17 @@ import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
 import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
 
 import scala.collection.immutable.HashMap
+import scala.collection.mutable.ArrayBuffer
 
 
-class SparkStreamFlow[K, V] extends Flow{
+abstract class SparkStreamFlow[K, V] extends Flow{
 
     var stream : InputDStream[ConsumerRecord[K, V]] = _
     var conf : SparkConf = _
     var ssc : StreamingContext = _
     var duration : Long = 10
     var kafkaParams : Map[String, Object] = new HashMap[String, Object]()
-    var topics : Array[String] = _
+    var topics : ArrayBuffer[String] = _
     var autoCommit : java.lang.Boolean = _
 
     def setDuration(duration: Long): SparkStreamFlow[K, V] = {
@@ -34,7 +35,7 @@ class SparkStreamFlow[K, V] extends Flow{
     }
 
     def setTopic(topic: String): SparkStreamFlow[K, V] = {
-        this.topics += topic
+        this.topics += (topic)
         this
     }
 
@@ -93,7 +94,7 @@ class SparkStreamFlow[K, V] extends Flow{
         ssc.awaitTermination()
     }
 
-    abstract def process(rdd: RDD[ConsumerRecord[K, V]], time: Time)
+    def process(rdd: RDD[ConsumerRecord[K, V]], time: Time)
 
     def close(): Unit = {
         ssc.stop(true, true)
