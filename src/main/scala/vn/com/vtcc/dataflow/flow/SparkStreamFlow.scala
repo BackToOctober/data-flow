@@ -14,15 +14,18 @@ import scala.collection.immutable.HashMap
 import scala.collection.mutable.ArrayBuffer
 
 
-abstract class SparkStreamFlow[K, V] extends Flow{
+abstract class SparkStreamFlow[K, V] extends Flow {
 
     var stream : InputDStream[ConsumerRecord[K, V]] = _
     var conf : SparkConf = _
     var ssc : StreamingContext = _
     var duration : Long = 10
+    var params : Map[String, Object] = new HashMap[String, Object]()
     var kafkaParams : Map[String, Object] = new HashMap[String, Object]()
-    var topics : ArrayBuffer[String] = _
+    var topics : ArrayBuffer[String] = new ArrayBuffer[String]()
     var autoCommit : java.lang.Boolean = _
+    var appName : String = "spark_stream_flow"
+    var master : String = "local[*]"
 
     def setDuration(duration: Long): SparkStreamFlow[K, V] = {
         this.duration = duration
@@ -49,7 +52,7 @@ abstract class SparkStreamFlow[K, V] extends Flow{
         this
     }
 
-    def setParameter(key: String, value: String): SparkStreamFlow[K, V] = {
+    def setKafkaParameter(key: String, value: Object): SparkStreamFlow[K, V] = {
         kafkaParams += (key -> value)
         this
     }
@@ -59,9 +62,30 @@ abstract class SparkStreamFlow[K, V] extends Flow{
         this
     }
 
+    def setParameter(key: String, value: Object):  SparkStreamFlow[K, V] = {
+        this.params += (key -> value)
+        this
+    }
+
+    def setParameters(params: Map[String, Object]): SparkStreamFlow[K, V] = {
+        this.params = this.params ++ params
+        this
+    }
+
+    def setAppName(appName: String): SparkStreamFlow[K, V] = {
+        this.appName = appName
+        this
+    }
+
+    def setMaster(master: String): SparkStreamFlow[K, V] = {
+        this.master = master
+        this
+    }
+
     def initStream(): SparkStreamFlow[K, V] = {
-        conf = new SparkConf()
+        conf = new SparkConf().setAppName(appName).setMaster(master)
         ssc = new StreamingContext(conf, Seconds(duration))
+        println(this.kafkaParams)
         stream = KafkaUtils.createDirectStream[K, V](
             ssc,
             PreferConsistent,

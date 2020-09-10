@@ -2,6 +2,8 @@ package vn.com.vtcc.dataflow.flow;
 
 import vn.com.vtcc.dataflow.flow.source.StreamSource;
 
-public interface Flow {
+import java.io.Serializable;
+
+public interface Flow extends Serializable {
     public void run();
 }
