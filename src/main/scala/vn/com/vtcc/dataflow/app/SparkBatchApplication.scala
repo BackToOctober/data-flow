@@ -1,17 +1,23 @@
 package vn.com.vtcc.dataflow.app
 
 import java.nio.file.Paths
+import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.log4j.{Level, LogManager}
 import org.apache.spark.sql.types.{ArrayType, IntegerType, LongType, StringType, StructField, TimestampType}
 import org.apache.spark.sql.{Row, SparkSession, types}
 import vn.com.vtcc.dataflow.schema.OrmArticle
 import vn.com.vtcc.dataflow.utils.HdfsUtils
 
+import scala.collection.mutable.ListBuffer
+
 object SparkBatchApplication {
+
+    val logger = LogManager.getLogger(SparkBatchApplication.getClass)
 
     val schema = types.StructType(
         Seq(
@@ -54,19 +60,63 @@ object SparkBatchApplication {
         )
     )
 
-    def run(): Unit = {
-        val fs = HdfsUtils.builder()
-                        .setCoreSite("core-site.xml")
-                        .setHdfsSite("hdfs-site.xml")
-                        .init()
-        val rootFolderPath = "/user/linhnv52/crawler"
-        val subPath = "/2020/09/10/19/*"
-        val path = Paths.get(rootFolderPath, subPath)
-        val files = fs.listFiles(new Path(path.toString), false)
-        println(files)
+    def checkingParsingIsDone(path: String, fs: FileSystem): Boolean = {
+        if (HdfsUtils.exists(path, fs) && HdfsUtils.exists(path + "/_SUCCESS", fs)) {
+            return true
+        }
+        fs.delete(new Path(path), true)
+        false
+    }
+
+    def listFiles(path: String, fs: FileSystem): ListBuffer[String] = {
+        val files = new ListBuffer[String]()
+        val statusList = fs.listStatus(new Path(path))
+        for (i <- 0 until statusList.length) {
+            files += statusList(i).getPath.toString
+        }
+        files
+    }
+
+    def run(rootPath: String, parsingPath: String): Unit = {
+
+        val fs = HdfsUtils.builder().setCoreSite("core-site.xml").setHdfsSite("hdfs-site.xml").init()
+        val dateNow = new Date()
+        val dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd")
+        val subPath = dateTimeFormat.format(dateNow)
+        val path = Paths.get(rootPath, subPath)
+        val hourTimeFormat = new SimpleDateFormat("HH")
+
+        val hourNow = hourTimeFormat.format(dateNow)
+        val hourFolderPaths = listFiles(path.toString, fs)
+        val checkingHourFolderPaths = new ListBuffer[String]()
+
+        for (hourFolderPath <- hourFolderPaths) {
+            val segmentPath = hourFolderPath.split("/")
+            if (segmentPath(segmentPath.length - 1).toInt < hourNow.toInt) {
+                checkingHourFolderPaths += hourFolderPath
+            }
+        }
+
+        val minuteFolderPaths = new ListBuffer[String]()
+
+        for (checkingHourFolderPath <- checkingHourFolderPaths) {
+            minuteFolderPaths ++= listFiles(checkingHourFolderPath, fs)
+        }
+
+        val parsingMinuteFolderPaths = new ListBuffer[String]()
+        for (minuteFolderPath <- minuteFolderPaths) {
+            val checkingPath = minuteFolderPath.replace("crawler", "crawler_parsing")
+            if (!checkingParsingIsDone(checkingPath, fs)) {
+                parsingMinuteFolderPaths += minuteFolderPath
+            }
+        }
 
         val spark = SparkSession.builder().getOrCreate()
-        process(spark, "", "")
+        LogManager.getLogger("kafka").setLevel(Level.WARN)
+        for (path <- parsingMinuteFolderPaths) {
+            logger.info("run -> " + path)
+            process(spark, path, path.replace(rootPath, parsingPath))
+        }
     }
 
     def process(spark: SparkSession, inputPath: String, outputPath: String): Unit = {
@@ -123,8 +173,8 @@ object SparkBatchApplication {
     }
 
     def main(args: Array[String]): Unit = {
-        val inputPath = args(0)
-        val outputPath = args(1)
-        run()
+        val rootPath = args(0)
+        val parsingPath = args(1)
+        run(rootPath, parsingPath)
     }
 }

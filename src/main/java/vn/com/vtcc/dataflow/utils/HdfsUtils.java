@@ -1,18 +1,21 @@
 package vn.com.vtcc.dataflow.utils;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HdfsUtils {
 
     private static final Logger logger = LogManager.getLogger(HdfsUtils.class);
 
-    private static class FileSystemBuilder {
+    public static class FileSystemBuilder {
         private String coreSitePath;
         private String hdfsSitePath;
 
@@ -28,8 +31,8 @@ public class HdfsUtils {
 
         public FileSystem init() throws IOException {
             Configuration conf = new Configuration();
-            conf.addResource(this.coreSitePath);
-            conf.addResource(this.hdfsSitePath);
+            conf.addResource(new Path(this.coreSitePath));
+            conf.addResource(new Path(this.hdfsSitePath));
             conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
             conf.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
             return FileSystem.get(conf);
@@ -58,14 +61,24 @@ public class HdfsUtils {
         return false;
     }
 
-    public static void safeMove(String from, String target, FileSystem fs){
+    public static boolean safeMove(String from, String target, FileSystem fs){
         try {
             if(fs.exists(new Path(target))){
                 fs.delete(new Path(target), true);
             }
-            fs.rename(new Path(from), new Path(target));
+            return fs.rename(new Path(from), new Path(target));
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return false;
+    }
+
+    public static List<String> listFiles(String path, FileSystem fs) throws IOException {
+        List<String> files = new ArrayList<>();
+        FileStatus[] statusList = fs.listStatus(new Path(path));
+        for (int i=0; i<statusList.length; i++) {
+            files.add(statusList[i].getPath().toString());
+        }
+        return files;
     }
 }

@@ -23,7 +23,7 @@ object SparkStreamApplication {
 
     class SparkStreamFlowImpl extends SparkStreamFlow[Array[Byte], Array[Byte]] with Serializable {
         LogManager.getLogger("kafka").setLevel(Level.WARN)
-        val dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd/hh/mm")
+        val dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd/HH/mm")
 
         override def process(rdd: RDD[ConsumerRecord[Array[Byte], Array[Byte]]], time: Time): Unit = {
             val rootFolder = this.params.get("output.folder").get.toString

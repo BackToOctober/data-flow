@@ -102,7 +102,7 @@
 ////        val month = b.getMonthOfYear
 ////        val day = b.getDayOfMonth
 //
-////        val dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd/hh/mm/")
+////        val dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd/HH/mm/")
 ////        println(b)
 ////        println(dateTimeFormat.format(b))
 ////
