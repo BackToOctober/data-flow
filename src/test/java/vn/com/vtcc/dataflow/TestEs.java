@@ -21,7 +21,7 @@ public class TestEs {
     }
 
     public static LogCountMetric createMetric() {
-        LogCountMetric metric = new LogCountMetric();
+        LogCountMetric metric = new LogCountMetric("test_1");
         metric.setTimeStamp(System.currentTimeMillis()).increaseAndGet(10);
         metric.setAndGet(new Random().nextInt(20));
         return metric;

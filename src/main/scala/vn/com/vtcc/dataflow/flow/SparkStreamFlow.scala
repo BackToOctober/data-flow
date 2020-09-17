@@ -115,7 +115,7 @@ abstract class SparkStreamFlow[K, V] extends Flow {
             val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
             val spark = SparkSession.builder().config(rdd.sparkContext.getConf).getOrCreate()
             spark.sparkContext.setLogLevel("ERROR")
-            this.process(rdd, time)
+            this.process(rdd, time, offsetRanges: Array[OffsetRange])
             println("auto.commit = " + autoCommit)
             if (autoCommit == false) {
                 println("--> auto commit = " )
@@ -124,15 +124,12 @@ abstract class SparkStreamFlow[K, V] extends Flow {
                 }
                 stream.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
             }
-            this.offsetsProcess(offsetRanges)
         })
         ssc.start()
         ssc.awaitTermination()
     }
 
-    def process(rdd: RDD[ConsumerRecord[K, V]], time: Time)
-
-    def offsetsProcess(offsetRanges:  Array[OffsetRange])
+    def process(rdd: RDD[ConsumerRecord[K, V]], time: Time, offsetRanges: Array[OffsetRange])
 
     def close(): Unit = {
         ssc.stop(true, true)

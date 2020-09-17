@@ -22,7 +22,8 @@ public class LogCountMetric {
     @JsonProperty("count")
     private long count;
 
-    public LogCountMetric() {
+    public LogCountMetric(String metricName) {
+        this.metricName = metricName;
         this.sdf = new SimpleDateFormat(dateFormat);
     }
 

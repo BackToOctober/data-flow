@@ -13,8 +13,8 @@ public class LogCountMetricFactory {
         return this;
     }
 
-    public LogCountMetric createMetric() {
-        LogCountMetric logCountMetric = new LogCountMetric();
+    public LogCountMetric createMetric(String metricName) {
+        LogCountMetric logCountMetric = new LogCountMetric(metricName);
         logCountMetric.setDateFormat(this.dateFormat);
         return logCountMetric;
     }

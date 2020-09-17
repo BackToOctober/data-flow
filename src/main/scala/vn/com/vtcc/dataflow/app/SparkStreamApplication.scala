@@ -45,7 +45,8 @@ object SparkStreamApplication {
             connectorFactory = new ESConnectorFactory(monitorConfig)
         }
 
-        override def process(rdd: RDD[ConsumerRecord[Array[Byte], Array[Byte]]], time: Time): Unit = {
+        override def process(rdd: RDD[ConsumerRecord[Array[Byte], Array[Byte]]], time: Time
+                             , offsetRanges: Array[OffsetRange]): Unit = {
             val stopwatch = StopWatch.mark()
             val rootFolder = this.params.get("output.folder").get.toString
             val subPath = dateTimeFormat.format(new Date(time.milliseconds))
@@ -57,27 +58,48 @@ object SparkStreamApplication {
             rdd2.saveAsTextFile(path.toString)
 
             // [INFO]: send some metric
-            val timeStamp = System.currentTimeMillis()
-            val client = connectorFactory.createConnect()
-            val recordsCountAllMetric = LogCountMetricFactory.init().createMetric()
-            recordsCountAllMetric
-                .setTimeStamp(timeStamp)
-                .setAndGet(rdd2.count())
-            ESUtils.putData(client, esIndexMonitor, JacksonMapper.parseToString(recordsCountAllMetric))
+            try {
+                val timeStamp = System.currentTimeMillis()
+                val client = connectorFactory.createConnect()
+                val recordsCountAllMetric = LogCountMetricFactory.init().createMetric("stream.rdd.count")
+                recordsCountAllMetric
+                    .setTimeStamp(timeStamp)
+                    .setAndGet(rdd2.count())
+                ESUtils.putData(client, esIndexMonitor, JacksonMapper.parseToString(recordsCountAllMetric))
 
-            val delayMetric = LogCountMetricFactory.init().createMetric()
-            delayMetric
-                .setTimeStamp(timeStamp)
-                .setAndGet(stopwatch.getDelay)
+                val delayMetric = LogCountMetricFactory.init().createMetric("stream.delay")
+                delayMetric
+                    .setTimeStamp(timeStamp)
+                    .setAndGet(stopwatch.getDelay)
 
-            ESUtils.putData(client, esIndexMonitor, JacksonMapper.parseToString(delayMetric))
-            client.close()
-        }
+                ESUtils.putData(client, esIndexMonitor, JacksonMapper.parseToString(delayMetric))
 
-        override def offsetsProcess(offsetRanges: Array[OffsetRange]): Unit = {
-            for (offset <- offsetRanges) {
-
+                val partitionCountAllMetric = LogCountMetricFactory
+                    .init().createMetric("stream.partition.count.all")
+                    .setTimeStamp(timeStamp)
+                for (offset <- offsetRanges) {
+                    val topic = offset.topic
+                    val partition = offset.partition
+                    val fromOffset = offset.fromOffset
+                    val untilOffset = offset.untilOffset
+                    val partitionCountMetric = LogCountMetricFactory
+                        .init().createMetric("stream.partition_" + partition + ".count")
+                    partitionCountMetric
+                        .setTimeStamp(timeStamp)
+                        .setAndGet(offset.count())
+                    partitionCountAllMetric
+                        .increase(offset.count())
+                    ESUtils.putData(client, esIndexMonitor, JacksonMapper.parseToString(partitionCountMetric))
+                }
+                ESUtils.putData(client, esIndexMonitor, JacksonMapper.parseToString(partitionCountAllMetric))
+                client.close()
+            } catch {
+                case e: Exception => {
+                    println("--> error")
+                    e.printStackTrace()
+                }
             }
+
         }
     }
 
@@ -93,12 +115,12 @@ object SparkStreamApplication {
             .+("request.timeout.ms" -> appProps.getProperty("kafka.request.timeout.ms","70000"))
             .+("session.timeout.ms" -> appProps.getProperty("kafka.session.timeout.ms", "60000"))
 
-        val runtime = Runtime.getRuntime
-        runtime.addShutdownHook(new Thread("shutdown") {
-            override def run(): Unit = {
-                close()
-            }
-        })
+        //        val runtime = Runtime.getRuntime
+        //        runtime.addShutdownHook(new Thread("shutdown") {
+        //            override def run(): Unit = {
+        //                close()
+        //            }
+        //        })
 
         val clientProps = new Properties()
         clientProps.setProperty("elasticsearch.host", appProps.getProperty("elasticsearch.host"))
@@ -110,7 +132,9 @@ object SparkStreamApplication {
             , appProps.getProperty("elasticsearch.socket.timeout", "50000"))
 
         sparkStreamFlow = new SparkStreamFlowImpl()
-        sparkStreamFlow.setMonitorConfig(clientProps)
+        sparkStreamFlow
+            .setMonitorConfig(clientProps)
+            .setESIndexMonitor("stream_crawler_tracking")
         sparkStreamFlow
             .setAppName(appProps.getProperty("app.name"))
             .setMaster(appProps.getProperty("spark.core"))
@@ -119,13 +143,14 @@ object SparkStreamApplication {
             .setKafkaConfig(kafkaConfig)
             .setDuration(Integer.parseInt(appProps.getProperty("spark.stream.duration")))
             .initStream()
+            .run()
     }
 
-    def close(): Unit = {
-        if (sparkStreamFlow != null) {
-            sparkStreamFlow.close()
-        }
-    }
+    //    def close(): Unit = {
+    //        if (sparkStreamFlow != null) {
+    //            sparkStreamFlow.close()
+    //        }
+    //    }
 
     def main(args: Array[String]): Unit = {
         val configPath = args(0)
