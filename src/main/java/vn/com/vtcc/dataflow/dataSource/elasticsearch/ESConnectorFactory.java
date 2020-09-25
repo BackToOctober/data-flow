@@ -12,10 +12,10 @@ import java.util.Properties;
 
 public class ESConnectorFactory implements Serializable {
 
-    private String esHost;
-    private int esConnectionRequestTimeout;
-    private int esConnectTimeOut;
-    private int esSocketTimeOut;
+    private final String esHost;
+    private final int esConnectionRequestTimeout;
+    private final int esConnectTimeOut;
+    private final int esSocketTimeOut;
 
     public ESConnectorFactory(Properties config) {
         this.esHost = config.getProperty("elasticsearch.host");

@@ -26,7 +26,8 @@ object SparkStreamApplication {
 
     class SparkStreamFlowImpl extends SparkStreamFlow[Array[Byte], Array[Byte]] with Serializable {
         LogManager.getLogger("kafka").setLevel(Level.WARN)
-        val dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd/HH/mm")
+        val dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd/HH/")
+        val fileTimeFormat = new SimpleDateFormat("mm_ss_")
         var connectorFactory : ESConnectorFactory = _
         var monitorConfig : Properties = _
         var esIndexMonitor : String = _
@@ -49,7 +50,7 @@ object SparkStreamApplication {
                              , offsetRanges: Array[OffsetRange]): Unit = {
             val stopwatch = StopWatch.mark()
             val rootFolder = this.params.get("output.folder").get.toString
-            val subPath = dateTimeFormat.format(new Date(time.milliseconds))
+            val subPath = dateTimeFormat.format(new Date(time.milliseconds)) + fileTimeFormat.format(new Date(time.milliseconds)) + time.milliseconds
             val path = Paths.get(rootFolder, subPath)
             val rdd2 = rdd.map(r => {
                 val byteText = r.value()
