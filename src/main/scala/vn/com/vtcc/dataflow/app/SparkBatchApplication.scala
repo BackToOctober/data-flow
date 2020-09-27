@@ -117,6 +117,7 @@ object SparkBatchApplication {
             logger.info("run -> " + path)
             process(spark, path, path.replace(rootPath, parsingPath))
         }
+        fs.close()
     }
 
     def process(spark: SparkSession, inputPath: String, outputPath: String): Unit = {

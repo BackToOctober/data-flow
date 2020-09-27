@@ -20,6 +20,9 @@ public class StreamFlow implements Flow{
         this.components = new ArrayList<>();
     }
 
+    /**
+     * run flow...
+     */
     public void run() {
         for (Sink sink : sinks) {
             new Thread(sink).start();
@@ -27,6 +30,12 @@ public class StreamFlow implements Flow{
         this.streamSource.run();
     }
 
+    /**
+     * apply a source
+     *
+     * @param source: StreamSource
+     * @return StreamFlow
+     */
     public StreamFlow apply(StreamSource source) {
         if (this.streamSource != null) {
             throw new IllegalStateException("one stream source is exists");
@@ -36,6 +45,12 @@ public class StreamFlow implements Flow{
         return this;
     }
 
+    /**
+     * apply a processor
+     *
+     * @param processor: Processor
+     * @return StreamFlow
+     */
     public StreamFlow apply(Processor processor) {
         if (currentProcessor == null) {
             this.streamSource.setProcessor(processor);
@@ -48,6 +63,12 @@ public class StreamFlow implements Flow{
         return this;
     }
 
+    /**
+     * apply a sink
+     *
+     * @param sink: Sink
+     * @return StreamFlow
+     */
     public StreamFlow apply(Sink sink) {
         if (this.streamSource == null) {
             throw new NullPointerException("not found any stream source");

@@ -1,0 +1,17 @@
+{
+    "properties": {
+        "time_stamp": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        },
+        "date": {
+            "type": "text"
+        },
+        "metric_name": {
+            "type": "text"
+        },
+        "count": {
+            "type": "long"
+        }
+    }
+}
