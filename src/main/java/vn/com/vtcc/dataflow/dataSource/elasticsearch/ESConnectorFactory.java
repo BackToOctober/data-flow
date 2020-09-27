@@ -17,12 +17,21 @@ public class ESConnectorFactory implements Serializable {
     private final int esConnectTimeOut;
     private final int esSocketTimeOut;
 
+    /**
+     * create factory creating elastic search connection
+     *
+     * @param config : config of elasticsearch, contains exams:
+     *               elasticsearch.host = 127.0.0.1:9092,127.0.0.1:9093
+     *               elasticsearch.connection.request.timeout = 50000
+     *               elasticsearch.connection.timeout = 50000
+     *               elasticsearch.socket.timeout = 50000
+     */
     public ESConnectorFactory(Properties config) {
         this.esHost = config.getProperty("elasticsearch.host");
         this.esConnectionRequestTimeout = Integer.parseInt(
                 config.getProperty("elasticsearch.connection.request.timeout", "50000"));
         this.esConnectTimeOut = Integer.parseInt(
-                config.getProperty("elasticsearch.connection.request.timeout", "50000"));
+                config.getProperty("elasticsearch.connection.timeout", "50000"));
         this.esSocketTimeOut = Integer.parseInt(
                 config.getProperty("elasticsearch.socket.timeout", "50000"));
     }

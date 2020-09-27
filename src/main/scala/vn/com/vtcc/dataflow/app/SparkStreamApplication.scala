@@ -127,8 +127,8 @@ object SparkStreamApplication {
         clientProps.setProperty("elasticsearch.host", appProps.getProperty("elasticsearch.host"))
         clientProps.setProperty("elasticsearch.connection.request.timeout"
             , appProps.getProperty("elasticsearch.connection.request.timeout", "50000"))
-        clientProps.setProperty("elasticsearch.connection.request.timeout"
-            , appProps.getProperty("elasticsearch.connection.request.timeout", "50000"))
+        clientProps.setProperty("elasticsearch.connection.timeout"
+            , appProps.getProperty("elasticsearch.connection.timeout", "50000"))
         clientProps.setProperty("elasticsearch.socket.timeout"
             , appProps.getProperty("elasticsearch.socket.timeout", "50000"))
 
