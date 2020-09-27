@@ -1,5 +1,7 @@
 package vn.com.vtcc.dataflow;
 
+import org.json.JSONObject;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -20,5 +22,8 @@ public class Test {
 
     public static void main(String[] args) throws IOException {
 //        createDataTest();
+
+        JSONObject jsonObject = new JSONObject("{\"test1\": {\"a2\":\"asdasd\"}}");
+        System.out.println(jsonObject.toMap().get("test1"));
     }
 }
