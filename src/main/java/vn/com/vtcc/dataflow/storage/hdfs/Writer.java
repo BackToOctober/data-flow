@@ -1,4 +1,4 @@
-package vn.com.vtcc.dataflow.storage.writer;
+package vn.com.vtcc.dataflow.storage.hdfs;
 
 import java.io.IOException;
 

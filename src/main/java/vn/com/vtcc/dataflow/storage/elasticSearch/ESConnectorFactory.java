@@ -1,4 +1,4 @@
-package vn.com.vtcc.dataflow.dataSource.elasticsearch;
+package vn.com.vtcc.dataflow.storage.elasticSearch;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;

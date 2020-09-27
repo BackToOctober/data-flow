@@ -1,6 +1,6 @@
 package vn.com.vtcc.dataflow.app;
 
-import vn.com.vtcc.dataflow.flow.StreamFlow;
+import vn.com.vtcc.dataflow.flow.SerialStreamFlow;
 import vn.com.vtcc.dataflow.flow.processor.Processor;
 import vn.com.vtcc.dataflow.flow.processor.handler.StringHandler;
 import vn.com.vtcc.dataflow.flow.sink.Sink;
@@ -10,10 +10,10 @@ import vn.com.vtcc.dataflow.flow.source.io.FileStreamIO;
 
 public class SimpleApplication {
 
-    private StreamFlow flow;
+    private SerialStreamFlow flow;
 
     public SimpleApplication() {
-        this.flow = new StreamFlow();
+        this.flow = new SerialStreamFlow();
     }
 
     public void run() {

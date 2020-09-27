@@ -2,8 +2,8 @@ package vn.com.vtcc.dataflow.monitor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.elasticsearch.client.RestHighLevelClient;
-import vn.com.vtcc.dataflow.dataSource.elasticsearch.ESConnectorFactory;
-import vn.com.vtcc.dataflow.dataSource.elasticsearch.ESUtils;
+import vn.com.vtcc.dataflow.storage.elasticSearch.ESConnectorFactory;
+import vn.com.vtcc.dataflow.storage.elasticSearch.ESUtils;
 import vn.com.vtcc.dataflow.utils.JacksonMapper;
 
 import java.io.IOException;

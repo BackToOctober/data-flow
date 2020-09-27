@@ -1,4 +1,4 @@
-package vn.com.vtcc.dataflow.storage.writer;
+package vn.com.vtcc.dataflow.storage.hdfs;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.LogManager;

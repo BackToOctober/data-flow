@@ -1,4 +1,4 @@
-package vn.com.vtcc.dataflow.dataSource.elasticsearch;
+package vn.com.vtcc.dataflow.storage.elasticSearch;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;

@@ -14,7 +14,7 @@ import java.nio.file.Paths
 
 import org.apache.spark.streaming.kafka010.OffsetRange
 import org.xerial.snappy.Snappy
-import vn.com.vtcc.dataflow.dataSource.elasticsearch.{ESConnectorFactory, ESUtils}
+import vn.com.vtcc.dataflow.storage.elasticSearch.{ESConnectorFactory, ESUtils}
 import vn.com.vtcc.dataflow.monitor.LogCountMetricFactory
 
 import scala.collection.immutable

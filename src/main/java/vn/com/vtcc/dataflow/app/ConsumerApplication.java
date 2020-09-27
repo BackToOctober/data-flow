@@ -4,7 +4,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.xerial.snappy.Snappy;
-import vn.com.vtcc.dataflow.flow.StreamFlow;
+import vn.com.vtcc.dataflow.flow.SerialStreamFlow;
 import vn.com.vtcc.dataflow.flow.processor.Handler;
 import vn.com.vtcc.dataflow.flow.processor.Processor;
 import vn.com.vtcc.dataflow.flow.sink.Sink;
@@ -24,12 +24,12 @@ public class ConsumerApplication {
 
     private Logger logger = LogManager.getLogger(ConsumerApplication.class);
 
-    private final StreamFlow streamFlow;
+    private final SerialStreamFlow serialStreamFlow;
     private String name;
 
     public ConsumerApplication(String appName) {
         this.name = appName;
-        this.streamFlow = new StreamFlow();
+        this.serialStreamFlow = new SerialStreamFlow();
     }
 
     public void run(Properties props) {
@@ -43,10 +43,10 @@ public class ConsumerApplication {
             e.printStackTrace();
             System.exit(1);
         }
-        this.streamFlow.apply(new StreamSource().setStreamIO(kafkaStreamIO))
+        this.serialStreamFlow.apply(new StreamSource().setStreamIO(kafkaStreamIO))
                     .apply(new Processor().setHandler(handler))
                     .apply(new Sink().setSinkIO(hdfsRollingDataIO));
-        this.streamFlow.run();
+        this.serialStreamFlow.run();
     }
 
     public StreamIO<byte[]> getStreamSourceIO(Properties props) {
@@ -84,8 +84,8 @@ public class ConsumerApplication {
     }
 
     public void close() {
-        if (this.streamFlow != null) {
-            this.streamFlow.close();
+        if (this.serialStreamFlow != null) {
+            this.serialStreamFlow.close();
         }
     }
 

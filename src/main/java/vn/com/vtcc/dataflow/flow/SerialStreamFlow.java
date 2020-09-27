@@ -6,7 +6,7 @@ import vn.com.vtcc.dataflow.flow.source.StreamSource;
 
 import java.util.ArrayList;
 
-public class StreamFlow implements Flow{
+public class SerialStreamFlow implements Flow{
 
     private StreamSource streamSource;
     private ArrayList<Processor> processors;
@@ -14,7 +14,7 @@ public class StreamFlow implements Flow{
     private ArrayList<Object> components;
     private Processor currentProcessor;
 
-    public StreamFlow() {
+    public SerialStreamFlow() {
         this.processors = new ArrayList<>();
         this.sinks = new ArrayList<>();
         this.components = new ArrayList<>();
@@ -36,7 +36,7 @@ public class StreamFlow implements Flow{
      * @param source: StreamSource
      * @return StreamFlow
      */
-    public StreamFlow apply(StreamSource source) {
+    public SerialStreamFlow apply(StreamSource source) {
         if (this.streamSource != null) {
             throw new IllegalStateException("one stream source is exists");
         }
@@ -51,7 +51,7 @@ public class StreamFlow implements Flow{
      * @param processor: Processor
      * @return StreamFlow
      */
-    public StreamFlow apply(Processor processor) {
+    public SerialStreamFlow apply(Processor processor) {
         if (currentProcessor == null) {
             this.streamSource.setProcessor(processor);
         } else {
@@ -69,7 +69,7 @@ public class StreamFlow implements Flow{
      * @param sink: Sink
      * @return StreamFlow
      */
-    public StreamFlow apply(Sink sink) {
+    public SerialStreamFlow apply(Sink sink) {
         if (this.streamSource == null) {
             throw new NullPointerException("not found any stream source");
         }

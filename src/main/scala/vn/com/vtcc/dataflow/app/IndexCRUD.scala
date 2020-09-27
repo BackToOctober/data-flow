@@ -4,7 +4,7 @@ package vn.com.vtcc.dataflow.app
 import java.util.Properties
 
 import vn.com.vtcc.dataflow.app.SparkStreamApplication.appProps
-import vn.com.vtcc.dataflow.dataSource.elasticsearch.{ESConnectorFactory, ESUtils}
+import vn.com.vtcc.dataflow.storage.elasticSearch.{ESConnectorFactory, ESUtils}
 import vn.com.vtcc.dataflow.utils.FileUtils
 
 object IndexCRUD {

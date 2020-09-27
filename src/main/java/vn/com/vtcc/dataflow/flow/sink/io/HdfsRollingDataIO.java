@@ -2,7 +2,7 @@ package vn.com.vtcc.dataflow.flow.sink.io;
 
 import org.apache.hadoop.fs.FileSystem;
 import vn.com.vtcc.dataflow.flow.sink.SinkIO;
-import vn.com.vtcc.dataflow.storage.writer.HdfsRollingDataWriter;
+import vn.com.vtcc.dataflow.storage.hdfs.HdfsRollingDataWriter;
 
 import java.io.IOException;
 
