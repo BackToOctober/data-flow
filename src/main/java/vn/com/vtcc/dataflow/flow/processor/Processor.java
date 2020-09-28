@@ -1,8 +1,8 @@
 package vn.com.vtcc.dataflow.flow.processor;
 
 import org.apache.log4j.Logger;
+import vn.com.vtcc.dataflow.flow.Pipe;
 import vn.com.vtcc.dataflow.flow.sink.Sink;
-import vn.com.vtcc.dataflow.flow.source.StreamSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +14,15 @@ public class Processor<V, R> {
     private Processor nextProcessor;
     private List<Sink<R>> sinks;
     private Handler<V, R> handler;
+    private Pipe pipe;
+
+    public void setPipe(Pipe pipe) {
+        this.pipe = pipe;
+    }
+
+    public Pipe getPipe() {
+        return pipe;
+    }
 
     public Processor setHandler(Handler handler) {
         this.sinks = new ArrayList<>();
@@ -29,23 +38,32 @@ public class Processor<V, R> {
         this.sinks.add(sink);
     }
 
+    /**
+     * process data
+     * send to downstream if result is not null, otherwise return and exit method
+     *
+     * @param value: input value
+     */
     public void process(V value) {
         if (this.handler == null) {
             throw new NullPointerException("not found handler");
         }
         R result = this.handle(value);
-        if (this.sinks.size() > 0) {
-            for (Sink<R> sink : this.sinks) {
-                try {
-                    sink.put(result);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        if (result != null) {
+            if (this.sinks.size() > 0) {
+                for (Sink<R> sink : this.sinks) {
+                    try {
+                        sink.put(result);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+            if (this.nextProcessor != null) {
+                this.nextProcessor.process(result);
+            }
         }
-        if (this.nextProcessor != null) {
-            this.nextProcessor.process(result);
-        }
+
     }
 
     public R handle(V value) {

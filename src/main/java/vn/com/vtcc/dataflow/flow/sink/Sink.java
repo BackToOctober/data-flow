@@ -1,6 +1,7 @@
 package vn.com.vtcc.dataflow.flow.sink;
 
 import org.apache.log4j.Logger;
+import vn.com.vtcc.dataflow.flow.Pipe;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -12,9 +13,18 @@ public class Sink<V> implements Runnable{
     private BlockingQueue<V> dataQueue;
     private SinkIO<V> sinkIO;
     private volatile boolean isRun;
+    private Pipe pipe;
 
     public Sink() {
         this.dataQueue = new ArrayBlockingQueue<>(10000);
+    }
+
+    public Pipe getPipe() {
+        return pipe;
+    }
+
+    public void setPipe(Pipe pipe) {
+        this.pipe = pipe;
     }
 
     public Sink<V> setSinkIO(SinkIO sinkIO) {
@@ -23,9 +33,11 @@ public class Sink<V> implements Runnable{
     }
 
     public void put(V value) throws InterruptedException {
-        while (!this.dataQueue.offer(value)) {
-            logger.warn("this queue is full");
-            Thread.sleep(100);
+        if (value != null) {
+            while (!this.dataQueue.offer(value)) {
+                logger.warn("this queue is full");
+                Thread.sleep(100);
+            }
         }
     }
 

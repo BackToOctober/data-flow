@@ -4,7 +4,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.xerial.snappy.Snappy;
-import vn.com.vtcc.dataflow.flow.SerialStreamFlow;
+import vn.com.vtcc.dataflow.flow.Flow;
+import vn.com.vtcc.dataflow.flow.Flow;
+import vn.com.vtcc.dataflow.flow.ParallelStreamFlow;
+import vn.com.vtcc.dataflow.flow.Pipe;
 import vn.com.vtcc.dataflow.flow.processor.Handler;
 import vn.com.vtcc.dataflow.flow.processor.Processor;
 import vn.com.vtcc.dataflow.flow.sink.Sink;
@@ -18,22 +21,34 @@ import vn.com.vtcc.dataflow.utils.HdfsUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class ConsumerApplication {
 
     private Logger logger = LogManager.getLogger(ConsumerApplication.class);
 
-    private final SerialStreamFlow serialStreamFlow;
-    private String name;
+    private Flow flow;
+    private final String name;
+    private final int number;
 
-    public ConsumerApplication(String appName) {
+    public ConsumerApplication(String appName, int number) {
         this.name = appName;
-        this.serialStreamFlow = new SerialStreamFlow();
+        this.number = number;
     }
 
-    public void run(Properties props) {
-        logger.info("======> START consumer " + this.name);
+    public List<Pipe> makePipes(Properties props) {
+        List<Pipe> pipes = new ArrayList<>();
+        for (int i = 0; i<this.number; i++) {
+            String pipeName = this.name + "_part_" + i;
+            pipes.add(makePipe(props, pipeName));
+        }
+        return pipes;
+    }
+
+    public Pipe makePipe(Properties props, String pipeName) {
+        Pipe pipe = new Pipe(pipeName);
         StreamIO<byte[]> kafkaStreamIO = this.getStreamSourceIO(props);
         Handler<byte[], String> handler = this.getHandler();
         SinkIO<String> hdfsRollingDataIO = null;
@@ -43,10 +58,26 @@ public class ConsumerApplication {
             e.printStackTrace();
             System.exit(1);
         }
-        this.serialStreamFlow.apply(new StreamSource().setStreamIO(kafkaStreamIO))
-                    .apply(new Processor().setHandler(handler))
-                    .apply(new Sink().setSinkIO(hdfsRollingDataIO));
-        this.serialStreamFlow.run();
+        pipe.apply(new StreamSource().setStreamIO(kafkaStreamIO))
+                .apply(new Processor().setHandler(handler))
+                .apply(new Sink().setSinkIO(hdfsRollingDataIO));
+        return pipe;
+    }
+
+    public void run(Properties props) {
+        logger.info("======> START consumer " + this.name);
+
+        final Runtime runtime = Runtime.getRuntime();
+        runtime.addShutdownHook(new Thread("shutdown") {
+            @Override
+            public void run() {
+                close();
+            }
+        });
+
+        List<Pipe> pipes = makePipes(props);
+        this.flow = new ParallelStreamFlow(pipes);
+        this.flow.run();
     }
 
     public StreamIO<byte[]> getStreamSourceIO(Properties props) {
@@ -84,15 +115,16 @@ public class ConsumerApplication {
     }
 
     public void close() {
-        if (this.serialStreamFlow != null) {
-            this.serialStreamFlow.close();
+        if (this.flow != null) {
+            this.flow.close();
         }
     }
 
     public static void main(String[] args) throws IOException {
         String path = args[0];
         String name = args[1];
+        int numberThread = Integer.parseInt(args[2]);
         Properties props = FileUtils.readPropertiesFile(path);
-        new ConsumerApplication(name).run(props);
+        new ConsumerApplication(name, numberThread).run(props);
     }
 }

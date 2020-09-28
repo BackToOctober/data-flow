@@ -19,9 +19,9 @@ public class FileGenerator {
     public String getLine() throws IOException {
         this.lock.lock();
         String line = this.in.readLine();
-        if (line == null) {
-            this.in.close();
-        }
+//        if (line == null) {
+//            this.in.close();
+//        }
         this.lock.unlock();
         return line;
     }

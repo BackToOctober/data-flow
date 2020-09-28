@@ -1,6 +1,7 @@
 package vn.com.vtcc.dataflow.flow.source;
 
 import org.apache.log4j.Logger;
+import vn.com.vtcc.dataflow.flow.Pipe;
 import vn.com.vtcc.dataflow.flow.processor.Processor;
 import vn.com.vtcc.dataflow.flow.sink.Sink;
 import java.util.ArrayList;
@@ -14,9 +15,18 @@ public class StreamSource<V> {
     private List<Sink<V>> sinks;
     private volatile boolean isRun;
     private StreamIO<V> streamIO;
+    private Pipe pipe;
 
     public StreamSource() {
         this.sinks = new ArrayList<>();
+    }
+
+    public Pipe getPipe() {
+        return pipe;
+    }
+
+    public void setPipe(Pipe pipe) {
+        this.pipe = pipe;
     }
 
     public StreamSource setStreamIO(StreamIO streamIO) {

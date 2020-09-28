@@ -29,6 +29,7 @@ public class FileIO extends SinkIO<String> {
     public void write(String value) {
         try {
             this.bufferedWriter.write(value + "\n");
+            this.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -45,6 +46,7 @@ public class FileIO extends SinkIO<String> {
     @Override
     public void close() {
         try {
+            this.flush();
             this.bufferedWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
