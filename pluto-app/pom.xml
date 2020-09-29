@@ -9,6 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <groupId>vn.com.vtcc.pluto</groupId>
     <artifactId>pluto-app</artifactId>
     <version>1.0.0</version>
 

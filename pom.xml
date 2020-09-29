@@ -11,6 +11,7 @@
     <modules>
         <module>pluto-core</module>
         <module>pluto-app</module>
+        <module>pluto-monitor</module>
     </modules>
 
     <properties>

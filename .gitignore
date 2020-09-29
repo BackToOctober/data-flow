@@ -2,8 +2,10 @@
 .idea
 */target/
 logs
+data
 target/
 */*.iml
 */pid
 output_data
 spark-warehouse
+output
