@@ -5,7 +5,6 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.xerial.snappy.Snappy;
 import vn.com.vtcc.dataflow.flow.Flow;
-import vn.com.vtcc.dataflow.flow.Flow;
 import vn.com.vtcc.dataflow.flow.ParallelStreamFlow;
 import vn.com.vtcc.dataflow.flow.Pipe;
 import vn.com.vtcc.dataflow.flow.processor.Handler;
@@ -27,7 +26,7 @@ import java.util.Properties;
 
 public class ConsumerApplication {
 
-    private Logger logger = LogManager.getLogger(ConsumerApplication.class);
+    private final Logger logger = LogManager.getLogger(ConsumerApplication.class);
 
     private Flow flow;
     private final String name;
@@ -65,7 +64,7 @@ public class ConsumerApplication {
     }
 
     public void run(Properties props) {
-        logger.info("======> START consumer " + this.name);
+        logger.info(" >>> start consumer " + this.name);
 
         final Runtime runtime = Runtime.getRuntime();
         runtime.addShutdownHook(new Thread("shutdown") {

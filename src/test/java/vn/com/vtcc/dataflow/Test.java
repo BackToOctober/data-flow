@@ -6,6 +6,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import static spark.Spark.*;
+
 
 public class Test {
 
@@ -20,10 +22,15 @@ public class Test {
         bw.close();
     }
 
+    public static void createServer() {
+        get("/hello", (req, res) -> "Hello World");
+    }
+
     public static void main(String[] args) throws IOException {
 //        createDataTest();
 
-        JSONObject jsonObject = new JSONObject("{\"test1\": {\"a2\":\"asdasd\"}}");
-        System.out.println(jsonObject.toMap().get("test1"));
+//        JSONObject jsonObject = new JSONObject("{\"test1\": {\"a2\":\"asdasd\"}}");
+//        System.out.println(jsonObject.toMap().get("test1"));
+        createServer();
     }
 }

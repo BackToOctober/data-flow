@@ -13,13 +13,13 @@ import java.util.concurrent.*;
 
 public class KafkaStreamIO extends StreamIO<byte[]> {
 
-    private static Logger logger = Logger.getLogger(KafkaStreamIO.class);
+    private static final Logger logger = Logger.getLogger(KafkaStreamIO.class);
 
-    private KafkaConsumer<byte[],  byte[]> kafkaConsumer;
+    private final KafkaConsumer<byte[],  byte[]> kafkaConsumer;
     private volatile boolean isRunning;
-    private long timeout;
-    private BlockingQueue<byte[]> queue;
-    private String topic;
+    private final long timeout;
+    private final BlockingQueue<byte[]> queue;
+    private final String topic;
     private ExecutorService executorService;
 
     public KafkaStreamIO(Properties props) {

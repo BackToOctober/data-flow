@@ -5,7 +5,5 @@ logs
 target/
 */*.iml
 */pid
-data
 output_data
 spark-warehouse
-*.xml
