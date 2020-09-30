@@ -3,15 +3,20 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>data-flow</artifactId>
-        <groupId>vn.com.vtcc.dataflow</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <artifactId>pluto</artifactId>
+        <groupId>vn.com.vtcc.pluto</groupId>
+        <version>1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>vn.com.vtcc.pluto</groupId>
     <artifactId>pluto-app</artifactId>
     <version>1.0.0</version>
 
-
+    <dependencies>
+        <dependency>
+            <groupId>vn.com.vtcc.pluto</groupId>
+            <artifactId>pluto-core</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
 </project>

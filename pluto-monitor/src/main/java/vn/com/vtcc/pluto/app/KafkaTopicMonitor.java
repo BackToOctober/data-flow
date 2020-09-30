@@ -1,14 +1,19 @@
 package vn.com.vtcc.pluto.app;
 
+import io.prometheus.client.Gauge;
 import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 import vn.com.vtcc.pluto.core.monitor.prometheus.ExporterServer;
+import vn.com.vtcc.pluto.core.monitor.prometheus.MainRegistry;
+import vn.com.vtcc.pluto.core.monitor.prometheus.MetricHandler;
 import vn.com.vtcc.pluto.core.utils.FileUtils;
+import vn.com.vtcc.pluto.core.utils.KafkaUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -18,8 +23,11 @@ public class KafkaTopicMonitor {
 
     private static KafkaTopicMonitor kafkaTopicMonitor;
     private Properties props;
-    private Properties kafkaProps;
     private ExporterServer exporterServer;
+    private KafkaUtils kafkaUtils;
+    private MainRegistry mainRegistry;
+
+    private Gauge lagOffsetGroupIDKafkaMetric;
 
     private KafkaTopicMonitor() {}
 
@@ -31,61 +39,54 @@ public class KafkaTopicMonitor {
     }
 
     public void init() {
-        this.kafkaProps = new Properties();
-        this.kafkaProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, this.props.getProperty("kafka.bootstrap.servers"));
+        this.kafkaUtils = new KafkaUtils(this.props);
+        this.initMetrics();
         this.exporterServer = ExporterServer.getInstance();
         this.exporterServer.setPort(Integer.parseInt(this.props.getProperty("monitor.exporter-server.port", "9276")));
-        this.initMetrics();
     }
 
     public void initMetrics() {
-
+        this.mainRegistry = MainRegistry.getInstance();
+        this.lagOffsetGroupIDKafkaMetric = Gauge.build()
+                .name("lag_offset_groupId_kafka")
+                .help("collect_lag_metric")
+                .labelNames("topic", "groupId", "partition").create();
+        this.mainRegistry.register(10, this.lagOffsetGroupIDKafkaMetric, new MetricHandler() {
+            @Override
+            public void handle() {
+                try {
+                    String topic = props.getProperty("kafka.topic");
+                    String groupId = props.getProperty("kafka.groupId");
+                    Map<TopicPartition, Long> lagOffsetMap = kafkaUtils.getOffsetGroupID(groupId);
+                    for(Map.Entry<TopicPartition, Long> entry : lagOffsetMap.entrySet()) {
+                        lagOffsetGroupIDKafkaMetric
+                                .labels(topic, groupId, String.valueOf(entry.getKey().partition()))
+                                .set(entry.getValue());
+                    }
+                } catch (ExecutionException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     public void setProps(Properties props) {
         this.props = props;
     }
 
-    public List<String> getAllTopics() throws ExecutionException, InterruptedException {
-        AdminClient adminClient = AdminClient.create(this.kafkaProps);
-        List<TopicListing> list = new ArrayList<>(adminClient.listTopics().listings().get());
-        List<String> result = new ArrayList<>();
-        for (TopicListing topicListing : list) {
-            if (!topicListing.isInternal()) {
-                result.add(topicListing.name());
-            }
-        }
-        adminClient.close();
-        return result;
-    }
-
-    public void describeTopic(String topicName) throws ExecutionException, InterruptedException {
-        AdminClient adminClient = AdminClient.create(this.kafkaProps);
-        DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singleton(topicName));
-        TopicDescription description = describeTopicsResult.values().get(topicName).get();
-        System.out.println(description);
-        adminClient.close();
-    }
-
-    public void getAllGroupID(String topic) throws ExecutionException, InterruptedException {
-        AdminClient adminClient = AdminClient.create(this.kafkaProps);
-        ListConsumerGroupsResult listConsumerGroupsResult = adminClient.listConsumerGroups(new ListConsumerGroupsOptions().timeoutMs(2000));
-        List<ConsumerGroupListing> list = new ArrayList<>(listConsumerGroupsResult.all().get());
-        System.out.println(list);
-        for (ConsumerGroupListing consumerGroupListing : list) {
-            System.out.println(consumerGroupListing);
-        }
-        adminClient.close();
-    }
-
-    public void getOffsetGroupID(String groupID) {
-        AdminClient adminClient = AdminClient.create(this.kafkaProps);
-        adminClient.listConsumerGroupOffsets(groupID);
-        adminClient.close();
-    }
-
     public void run() {
+        LogManager.getLogger(AdminClientConfig.class).setLevel(Level.ERROR);
+        LogManager.getLogger(ConsumerConfig.class).setLevel(Level.ERROR);
+        final Runtime runtime = Runtime.getRuntime();
+        runtime.addShutdownHook(new Thread("shutdown") {
+            @Override
+            public void run() {
+                close();
+            }
+        });
+
         this.init();
+        this.exporterServer.run();
     }
 
     public void close() {
@@ -94,7 +95,7 @@ public class KafkaTopicMonitor {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         String path = args[0];
         Properties props = FileUtils.readPropertiesFile(path);
         KafkaTopicMonitor monitor = KafkaTopicMonitor.getInstance();

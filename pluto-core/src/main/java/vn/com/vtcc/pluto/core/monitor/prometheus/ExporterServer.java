@@ -28,6 +28,7 @@ public class ExporterServer {
 
     private final MainRegistry mainRegistry;
     private final Map<String, Long> pathMap;
+    private Map<String, MetricHandler> pathProcessingHandlerMap;
 
     private ExporterServer() {
         this.mainRegistry = MainRegistry.getInstance();
@@ -75,9 +76,19 @@ public class ExporterServer {
         return sb.toString();
     }
 
+    /**
+     * handle and write to string metric
+     *
+     * @param uri: uri:
+     *           /metrics/10s
+     *           /metrics/20s
+     * @return prometheus text format
+     */
     public String getResponseResult(String uri) {
-        long key = pathMap.get(uri);
-        CollectorRegistry cr = mainRegistry.getRegistryMap().get(key);
+        long key = this.pathMap.get(uri);
+        List<MetricHandler> list = this.mainRegistry.getMetricHandlerMap().get(key);
+        list.forEach(MetricHandler::handle);
+        CollectorRegistry cr = this.mainRegistry.getRegistryMap().get(key);
         return writeResponse(cr);
     }
 
