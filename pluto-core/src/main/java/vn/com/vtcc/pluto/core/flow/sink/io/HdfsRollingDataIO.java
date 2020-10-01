@@ -8,10 +8,16 @@ import java.io.IOException;
 
 public class HdfsRollingDataIO extends SinkIO<String> {
 
-    private HdfsRollingDataWriter hdfsRollingDataWriter;
+    private final HdfsRollingDataWriter hdfsRollingDataWriter;
 
     public HdfsRollingDataIO(long timeReset, String parentFolderPath, String subPathPattern, FileSystem fileSystem) throws IOException {
-        this.hdfsRollingDataWriter = new HdfsRollingDataWriter(timeReset, parentFolderPath, subPathPattern, fileSystem);
+        this(timeReset, parentFolderPath, subPathPattern, fileSystem, true, null);
+    }
+
+    public HdfsRollingDataIO(long timeReset, String parentFolderPath, String subPathPattern, FileSystem fileSystem,
+                             boolean autoGenFileName, String customName) throws IOException {
+        this.hdfsRollingDataWriter = new HdfsRollingDataWriter(timeReset, parentFolderPath, subPathPattern, fileSystem,
+                autoGenFileName, customName);
         this.hdfsRollingDataWriter.openWriter();
     }
 

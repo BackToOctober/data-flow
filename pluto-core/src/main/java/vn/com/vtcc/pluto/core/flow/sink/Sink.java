@@ -8,15 +8,19 @@ import java.util.concurrent.BlockingQueue;
 
 public class Sink<V> implements Runnable{
 
-    private static Logger logger = Logger.getLogger(Sink.class);
+    private static final Logger logger = Logger.getLogger(Sink.class);
 
-    private BlockingQueue<V> dataQueue;
+    private final BlockingQueue<V> dataQueue;
     private SinkIO<V> sinkIO;
     private volatile boolean isRun;
     private Pipe pipe;
 
     public Sink() {
-        this.dataQueue = new ArrayBlockingQueue<>(10000);
+        this.dataQueue = new ArrayBlockingQueue<>(20000);
+    }
+
+    public int getQueueSize() {
+        return this.dataQueue.size();
     }
 
     public Pipe getPipe() {
@@ -61,7 +65,7 @@ public class Sink<V> implements Runnable{
     }
 
     public void close() {
-        if (this.isRun == true) {
+        if (this.isRun) {
             this.isRun = false;
         }
         if (this.sinkIO != null) {

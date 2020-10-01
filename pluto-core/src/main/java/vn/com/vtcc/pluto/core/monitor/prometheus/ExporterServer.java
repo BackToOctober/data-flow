@@ -28,7 +28,6 @@ public class ExporterServer {
 
     private final MainRegistry mainRegistry;
     private final Map<String, Long> pathMap;
-    private Map<String, MetricHandler> pathProcessingHandlerMap;
 
     private ExporterServer() {
         this.mainRegistry = MainRegistry.getInstance();

@@ -28,10 +28,17 @@ public class HdfsRollingDataWriter implements Writer {
      * @param fileSystem : file system hdfs
      */
     public HdfsRollingDataWriter(long timeReset, String parentFolderPath, String subPathPattern, FileSystem fileSystem) {
+        this(timeReset, parentFolderPath, subPathPattern, fileSystem, true, null);
+    }
+
+    public HdfsRollingDataWriter(long timeReset, String parentFolderPath, String subPathPattern, FileSystem fileSystem,
+                                 boolean autoGenFileName, String customName) {
         this.parentFolderPath = parentFolderPath;
         this.subPathPattern = subPathPattern;
         this.fileSystem = fileSystem;
         this.schedule = new FileNamingSchedule(timeReset, this);
+        this.schedule.setGenFileName(autoGenFileName);
+        this.schedule.setCustomName(customName);
     }
 
     public String getSubPathPattern() {

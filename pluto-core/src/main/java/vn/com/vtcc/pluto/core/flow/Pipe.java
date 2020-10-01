@@ -31,6 +31,22 @@ public class Pipe {
         this.pipeName = pipeName;
     }
 
+    public StreamSource getStreamSource() {
+        return this.streamSource;
+    }
+
+    public List<Processor> getProcessors() {
+        return this.processors;
+    }
+
+    public List<Sink> getSinks() {
+        return this.sinks;
+    }
+
+    public List<Object> getComponents() {
+        return components;
+    }
+
     /**
      * run flow...
      */

@@ -57,7 +57,7 @@ public class KafkaTopicMonitor {
                 try {
                     String topic = props.getProperty("kafka.topic");
                     String groupId = props.getProperty("kafka.groupId");
-                    Map<TopicPartition, Long> lagOffsetMap = kafkaUtils.getOffsetGroupID(groupId);
+                    Map<TopicPartition, Long> lagOffsetMap = kafkaUtils.getOffsetGroupID(groupId, Integer.parseInt(props.getProperty("kafka.query.timeout", "5000")));
                     for(Map.Entry<TopicPartition, Long> entry : lagOffsetMap.entrySet()) {
                         lagOffsetGroupIDKafkaMetric
                                 .labels(topic, groupId, String.valueOf(entry.getKey().partition()))

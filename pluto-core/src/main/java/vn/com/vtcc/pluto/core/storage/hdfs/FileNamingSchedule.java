@@ -93,9 +93,10 @@ public class FileNamingSchedule {
      */
     public String naming(long time) {
         String patternPath = TimeUtils.formatPattern(this.hdfsRollingDataWriter.getSubPathPattern(), time);
+        String subName = TimeUtils.formatPattern("mm", time);
         if (this.isAutoGenFileName) {
             if (this.customName != null) {
-                return Paths.get(patternPath, this.customName + "_" + IDGenerator.genID()).toString();
+                return Paths.get(patternPath, "part-" + subName + "-" + this.customName + "-" + IDGenerator.genID()).toString();
             }
             return Paths.get(patternPath, IDGenerator.genID()).toString();
         }

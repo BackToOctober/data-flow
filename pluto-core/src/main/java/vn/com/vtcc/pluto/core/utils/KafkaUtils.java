@@ -31,9 +31,9 @@ public class KafkaUtils {
         this.kafkaProps.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, this.props.getProperty("kafka.bootstrap.servers"));
     }
 
-    public List<String> getAllTopics() throws ExecutionException, InterruptedException {
+    public List<String> getAllTopics(int timeout) throws ExecutionException, InterruptedException {
         AdminClient adminClient = AdminClient.create(this.kafkaProps);
-        List<String> list = adminClient.listTopics(new ListTopicsOptions().timeoutMs(2000)).listings().get()
+        List<String> list = adminClient.listTopics(new ListTopicsOptions().timeoutMs(timeout)).listings().get()
                 .stream()
                 .filter(r -> !r.isInternal())
                 .map(TopicListing::name).collect(Collectors.toList());
@@ -41,17 +41,17 @@ public class KafkaUtils {
         return list;
     }
 
-    public void describeTopic(String topicName) throws ExecutionException, InterruptedException {
+    public void describeTopic(String topicName, int timeout) throws ExecutionException, InterruptedException {
         AdminClient adminClient = AdminClient.create(this.kafkaProps);
-        DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singleton(topicName), new DescribeTopicsOptions().timeoutMs(2000));
+        DescribeTopicsResult describeTopicsResult = adminClient.describeTopics(Collections.singleton(topicName), new DescribeTopicsOptions().timeoutMs(timeout));
         TopicDescription description = describeTopicsResult.values().get(topicName).get();
         System.out.println(description);
         adminClient.close();
     }
 
-    public List<String> getAllGroupID() throws ExecutionException, InterruptedException {
+    public List<String> getAllGroupID(int timeout) throws ExecutionException, InterruptedException {
         AdminClient adminClient = AdminClient.create(this.kafkaProps);
-        ListConsumerGroupsResult listConsumerGroupsResult = adminClient.listConsumerGroups(new ListConsumerGroupsOptions().timeoutMs(2000));
+        ListConsumerGroupsResult listConsumerGroupsResult = adminClient.listConsumerGroups(new ListConsumerGroupsOptions().timeoutMs(timeout));
         List<String> list = listConsumerGroupsResult.all().get()
                 .stream()
                 .map(ConsumerGroupListing::groupId).collect(Collectors.toList());
@@ -59,9 +59,9 @@ public class KafkaUtils {
         return list;
     }
 
-    public Map<TopicPartition, Long> getOffsetGroupID(String groupID) throws ExecutionException, InterruptedException {
+    public Map<TopicPartition, Long> getOffsetGroupID(String groupID, int timeout) throws ExecutionException, InterruptedException {
         AdminClient adminClient = AdminClient.create(this.kafkaProps);
-        ListConsumerGroupOffsetsResult listConsumerGroupOffsetsResult = adminClient.listConsumerGroupOffsets(groupID, new ListConsumerGroupOffsetsOptions().timeoutMs(2000));
+        ListConsumerGroupOffsetsResult listConsumerGroupOffsetsResult = adminClient.listConsumerGroupOffsets(groupID, new ListConsumerGroupOffsetsOptions().timeoutMs(timeout));
         Map<TopicPartition, OffsetAndMetadata> consumerGroupOffsets = listConsumerGroupOffsetsResult.partitionsToOffsetAndMetadata().get();
         adminClient.close();
 
