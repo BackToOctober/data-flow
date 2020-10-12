@@ -1,7 +1,5 @@
 package vn.com.vtcc.pluto.app;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import vn.com.vtcc.pluto.core.flow.Flow;
 import vn.com.vtcc.pluto.core.flow.ParallelStreamFlow;
 import vn.com.vtcc.pluto.core.flow.Pipe;
@@ -17,8 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleApplication {
-
-    private final Logger logger = LogManager.getLogger(SimpleApplication.class);
 
     private Flow flow;
 
@@ -49,9 +45,9 @@ public class SimpleApplication {
     }
 
     public Pipe makePipe(String pipeName) throws FileNotFoundException {
-        String file1 = pipeName + "_test_linhnv52_1";
-        String file2 = pipeName + "_test_linhnv52_2";
-        String file3 = pipeName + "_test_linhnv52_3";
+        String file1 = pipeName + "_test_1";
+        String file2 = pipeName + "_test_2";
+        String file3 = pipeName + "_test_3";
         Pipe pipe = new Pipe(pipeName);
         pipe.apply(new StreamSource<String>().setStreamIO(new FileStreamIO().setFileGenerator("data/data.jsonl")))
                 .apply(new Sink<String>().setSinkIO(new FileIO(file1)))

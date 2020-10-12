@@ -2,12 +2,13 @@ package vn.com.vtcc.pluto.app
 
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.{Calendar, Date}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
+import org.apache.commons.lang3.time.DateUtils
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.log4j.{Level, LogManager}
+import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SparkSession, types}
 import vn.com.vtcc.pluto.core.utils.HdfsUtils
@@ -17,9 +18,9 @@ import scala.collection.mutable.ListBuffer
 
 object SparkBatchApplication {
 
-    val logger = LogManager.getLogger(SparkBatchApplication.getClass)
+    val logger: Logger = LogManager.getLogger(SparkBatchApplication.getClass)
 
-    val schema = types.StructType(
+    val schema: StructType = types.StructType(
         Seq(
             StructField(name = "id", dataType = StringType, nullable = true),
             StructField(name = "url", dataType = StringType, nullable = true),
@@ -32,7 +33,8 @@ object SparkBatchApplication {
             StructField(name = "title", dataType = StringType, nullable = true),
             StructField(name = "summary", dataType = StringType, nullable = true),
             StructField(name = "content", dataType = StringType, nullable = true),
-            StructField(name = "image_sources", dataType = ArrayType(StringType), nullable = true), StructField(name = "video_sources", dataType = ArrayType(StringType), nullable = true),
+            StructField(name = "image_sources", dataType = ArrayType(StringType), nullable = true),
+            StructField(name = "video_sources", dataType = ArrayType(StringType), nullable = true),
             StructField(name = "similar_master", dataType = StringType, nullable = true),
             StructField(name = "similar_group_id", dataType = StringType, nullable = true),
             StructField(name = "article_type", dataType = StringType, nullable = true),
@@ -79,6 +81,7 @@ object SparkBatchApplication {
 
     def run(rootPath: String, parsingPath: String): Unit = {
 
+        // 1. check 0-22h
         val fs = HdfsUtils.builder().setCoreSite("core-site.xml").setHdfsSite("hdfs-site.xml").init()
         val dateNow = new Date()
         val dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd")
@@ -108,6 +111,20 @@ object SparkBatchApplication {
             val checkingPath = minuteFolderPath.replace("crawler", "crawler_parsing")
             if (!checkingParsingIsDone(checkingPath, fs)) {
                 parsingMinuteFolderPaths += minuteFolderPath
+            }
+        }
+
+        // 2. check 23h
+        if (hourNow.toInt == 0) {
+            val yesterday = DateUtils.addDays(dateNow, -1)
+            val subPathYesterday = dateTimeFormat.format(yesterday)
+            val pathYesterday = Paths.get(rootPath, subPathYesterday, "23")
+            val minuteFolderPathsYesterday = listFiles(pathYesterday.toString, fs)
+            for (minuteFolderPathYesterday <- minuteFolderPathsYesterday) {
+                val checkingPathYesterday = minuteFolderPathYesterday.replace("crawler", "crawler_parsing")
+                if (!checkingParsingIsDone(checkingPathYesterday, fs)) {
+                    parsingMinuteFolderPaths += minuteFolderPathYesterday
+                }
             }
         }
 
