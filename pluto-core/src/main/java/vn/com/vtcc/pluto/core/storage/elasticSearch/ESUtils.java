@@ -56,12 +56,12 @@ public class ESUtils implements Serializable {
 
     public static class ESIndexBuilder {
 
-        private Logger logger = LogManager.getLogger(ESIndexBuilder.class);
+        private final Logger logger = LogManager.getLogger(ESIndexBuilder.class);
         private String esIndex;
         private int indexNumberOfShards = 1;
         private int indexNumberOfReplicas = 1;
         private Map<String, Object> mapping;
-        private String alias = null;
+        private final String alias = null;
         private RestHighLevelClient client;
 
         public static ESIndexBuilder getBuilder() {

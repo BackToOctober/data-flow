@@ -78,7 +78,7 @@ public class CustomGauge extends SimpleCollector<CustomGauge.Child> implements C
      * <em>Warning:</em> References to a Child become invalid after using
      * {@link SimpleCollector#remove} or {@link SimpleCollector#clear},
      */
-    private final Object lockNoLable = new Object();
+    private final Object lockNoLabel = new Object();
 
     public static class Child {
 
@@ -191,7 +191,7 @@ public class CustomGauge extends SimpleCollector<CustomGauge.Child> implements C
      * Increment the gauge with no labels by the given amount.
      */
     public void inc(double amt) {
-        synchronized (lockNoLable) {
+        synchronized (lockNoLabel) {
             noLabelsChild.inc(amt);
         }
     }
@@ -205,7 +205,7 @@ public class CustomGauge extends SimpleCollector<CustomGauge.Child> implements C
      * Decrement the gauge with no labels by the given amount.
      */
     public void dec(double amt) {
-        synchronized (lockNoLable) {
+        synchronized (lockNoLabel) {
             noLabelsChild.dec(amt);
         }
     }
@@ -213,13 +213,13 @@ public class CustomGauge extends SimpleCollector<CustomGauge.Child> implements C
      * Set the gauge with no labels to the given value.
      */
     public void set(double val) {
-        synchronized (lockNoLable) {
+        synchronized (lockNoLabel) {
             noLabelsChild.set(val);
         }
     }
 
     public double getAndSet(double val) {
-        synchronized (lockNoLable) {
+        synchronized (lockNoLabel) {
             double v = this.get();
             this.noLabelsChild.set(val);
             return v;

@@ -38,6 +38,7 @@ public class ConsumerApplication {
     private final int number;
     private final Map<String, AtomicLong> countSuccessfulRecord;
     private final Map<String, AtomicLong> countFailRecord;
+    private final Map<String, AtomicLong> countByteRecord;
     private final Timer timer;
 
     public ConsumerApplication(String appName, int number) {
@@ -45,6 +46,7 @@ public class ConsumerApplication {
         this.number = number;
         this.countSuccessfulRecord = new HashMap<>();
         this.countFailRecord = new HashMap<>();
+        this.countByteRecord = new HashMap<>();
         this.timer = new Timer();
     }
 
@@ -55,6 +57,7 @@ public class ConsumerApplication {
             pipes.add(makePipe(props, i, pipeName));
             this.countFailRecord.put(pipeName, new AtomicLong(0));
             this.countSuccessfulRecord.put(pipeName, new AtomicLong(0));
+            this.countByteRecord.put(pipeName, new AtomicLong());
         }
         return pipes;
     }
@@ -103,24 +106,25 @@ public class ConsumerApplication {
     public void pushMetrics(Properties props) {
         PushGateway pushGateway = new PushGateway(props.getProperty("prometheus.gateway"));
         CollectorRegistry registry = new CollectorRegistry();
-        final CustomGauge recordsParsingSuccessCount = CustomGauge.build()
-                .name("records_parsing_success")
-                .labelNames("topic", "thread")
-                .help("count number of records parsed successfully")
+        final CustomGauge recordsParsingSuccessCount = CustomGauge.build().name("records_parsing_success")
+                .labelNames("topic", "thread").help("count number of records parsed successfully")
                 .register(registry);
-        final CustomGauge recordsParsingFailureCount = CustomGauge.build()
-                .name("records_parsing_failure")
-                .labelNames("topic", "thread")
-                .help("count number of records parsed unsuccessfully")
+        final CustomGauge recordsParsingFailureCount = CustomGauge.build().name("records_parsing_failure")
+                .labelNames("topic", "thread").help("count number of records parsed unsuccessfully")
+                .register(registry);
+        final CustomGauge recordLengthCount = CustomGauge.build().name("records_length_count")
+                .labelNames("topic", "thread").help("measure length of records")
                 .register(registry);
         this.countSuccessfulRecord.entrySet().stream().forEach(c -> {
-            recordsParsingSuccessCount
-                    .labels(props.getProperty("kafka.topic"), c.getKey())
+            recordsParsingSuccessCount.labels(props.getProperty("kafka.topic"), c.getKey())
                     .set(c.getValue().getAndSet(0));
         });
         this.countFailRecord.entrySet().stream().forEach(c -> {
-            recordsParsingFailureCount
-                    .labels(props.getProperty("kafka.topic"), c.getKey())
+            recordsParsingFailureCount.labels(props.getProperty("kafka.topic"), c.getKey())
+                    .set(c.getValue().getAndSet(0));
+        });
+        this.countByteRecord.entrySet().stream().forEach(c -> {
+            recordLengthCount.labels(props.getProperty("kafka.topic"), c.getKey())
                     .set(c.getValue().getAndSet(0));
         });
         try {
@@ -150,6 +154,7 @@ public class ConsumerApplication {
         Handler<byte[], String> handler = new Handler<byte[], String>() {
             @Override
             public String handle(byte[] value) {
+                countByteRecord.get(threadName).addAndGet(value.length);
                 try {
                     String str = new String(Snappy.uncompress(value), StandardCharsets.UTF_8);
                     countSuccessfulRecord.get(threadName).incrementAndGet();

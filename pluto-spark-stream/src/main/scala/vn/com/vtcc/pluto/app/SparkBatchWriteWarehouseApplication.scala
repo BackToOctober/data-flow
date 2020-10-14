@@ -40,14 +40,14 @@ object SparkBatchWriteWarehouseApplication {
         val inputPath = Paths.get(rootPath, dateTimeFormat.format(date), "*", "*").toString
         println(" >> input path = " + inputPath)
 
-        val partitions = Seq("d_date");
+        val partitions = Seq("d_date")
         val df = spark.read.parquet(inputPath)
             .withColumn("d_date", from_unixtime(unix_timestamp(col("published_time")), "yyyyMMdd"))
         df.select("published_time", "d_date").show()
-//        df.write
-//            .partitionBy(partitions: _*)
-//            .mode(SaveMode.Append)
-//            .saveAsTable(table)
+        df.write
+            .partitionBy(partitions: _*)
+            .mode(SaveMode.Append)
+            .saveAsTable(table)
         sendMsg("fact_crawler_parsing_daily", dateTimeFormat.format(date), "success")
     }
 

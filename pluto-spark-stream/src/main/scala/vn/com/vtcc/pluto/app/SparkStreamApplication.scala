@@ -24,7 +24,11 @@ object SparkStreamApplication {
     var sparkStreamFlow: SparkStreamFlowImpl = _
 
     class SparkStreamFlowImpl extends SparkStreamFlow[Array[Byte], Array[Byte]] with Serializable {
+
         LogManager.getLogger("kafka").setLevel(Level.WARN)
+        LogManager.getLogger("org"). setLevel(Level.ERROR)
+        LogManager.getLogger("akka").setLevel(Level.ERROR)
+
         val dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd/HH/")
         val fileTimeFormat = new SimpleDateFormat("mm_ss_")
         var connectorFactory : ESConnectorFactory = _
@@ -115,13 +119,6 @@ object SparkStreamApplication {
             .+("request.timeout.ms" -> appProps.getProperty("kafka.request.timeout.ms","70000"))
             .+("session.timeout.ms" -> appProps.getProperty("kafka.session.timeout.ms", "60000"))
 
-        //        val runtime = Runtime.getRuntime
-        //        runtime.addShutdownHook(new Thread("shutdown") {
-        //            override def run(): Unit = {
-        //                close()
-        //            }
-        //        })
-
         val clientProps = new Properties()
         clientProps.setProperty("elasticsearch.host", appProps.getProperty("elasticsearch.host"))
         clientProps.setProperty("elasticsearch.connection.request.timeout"
@@ -145,12 +142,6 @@ object SparkStreamApplication {
             .initStream()
             .run()
     }
-
-    //    def close(): Unit = {
-    //        if (sparkStreamFlow != null) {
-    //            sparkStreamFlow.close()
-    //        }
-    //    }
 
     def main(args: Array[String]): Unit = {
         val configPath = args(0)

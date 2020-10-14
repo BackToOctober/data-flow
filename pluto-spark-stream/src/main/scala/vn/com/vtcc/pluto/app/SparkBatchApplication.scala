@@ -1,21 +1,28 @@
 package vn.com.vtcc.pluto.app
 
+import java.io.IOException
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
+import java.util.{Calendar, Date, Properties}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
+import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.exporter.PushGateway
 import org.apache.commons.lang3.time.DateUtils
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SparkSession, types}
-import vn.com.vtcc.pluto.core.utils.HdfsUtils
+import vn.com.vtcc.pluto.core.monitor.prometheus.CustomGauge
+import vn.com.vtcc.pluto.core.utils.{FileUtils, HdfsUtils, StopWatch}
 import vn.com.vtcc.pluto.schema.OrmArticle
 
 import scala.collection.mutable.ListBuffer
 
+/**
+ * batch crawler parsing daily job
+ */
 object SparkBatchApplication {
 
     val logger: Logger = LogManager.getLogger(SparkBatchApplication.getClass)
@@ -62,6 +69,12 @@ object SparkBatchApplication {
         )
     )
 
+    var gatewayProps: Properties = _
+
+    var pathParsingCount: Int = 0
+    var pathParsingSuccessCount: Int = 0
+    var timeProcessing: Long = 0
+
     def checkingParsingIsDone(path: String, fs: FileSystem): Boolean = {
         if (HdfsUtils.exists(path, fs) && HdfsUtils.exists(path + "/_SUCCESS", fs)) {
             return true
@@ -79,7 +92,19 @@ object SparkBatchApplication {
         files
     }
 
-    def run(rootPath: String, parsingPath: String): Unit = {
+    /**
+     * run...
+     *  list all file need parse
+     *  run each file as a parsing job
+     *
+     * param is pass from main method
+     *
+     * @param configPath :  path to gateway prometheus config file
+     * @param rootPath   : path to file need parse
+     * @param parsingPath: path to file saving data
+     */
+    def run(configPath: String, rootPath: String, parsingPath: String): Unit = {
+        gatewayProps = FileUtils.readPropertiesFile(configPath)
 
         // 1. check 0-22h
         val fs = HdfsUtils.builder().setCoreSite("core-site.xml").setHdfsSite("hdfs-site.xml").init()
@@ -108,7 +133,7 @@ object SparkBatchApplication {
 
         val parsingMinuteFolderPaths = new ListBuffer[String]()
         for (minuteFolderPath <- minuteFolderPaths) {
-            val checkingPath = minuteFolderPath.replace("crawler", "crawler_parsing")
+            val checkingPath = minuteFolderPath.replace(rootPath, parsingPath)
             if (!checkingParsingIsDone(checkingPath, fs)) {
                 parsingMinuteFolderPaths += minuteFolderPath
             }
@@ -121,22 +146,37 @@ object SparkBatchApplication {
             val pathYesterday = Paths.get(rootPath, subPathYesterday, "23")
             val minuteFolderPathsYesterday = listFiles(pathYesterday.toString, fs)
             for (minuteFolderPathYesterday <- minuteFolderPathsYesterday) {
-                val checkingPathYesterday = minuteFolderPathYesterday.replace("crawler", "crawler_parsing")
+                val checkingPathYesterday = minuteFolderPathYesterday.replace(rootPath, parsingPath)
                 if (!checkingParsingIsDone(checkingPathYesterday, fs)) {
                     parsingMinuteFolderPaths += minuteFolderPathYesterday
                 }
             }
         }
 
+        // 3. run...
         val spark = SparkSession.builder().getOrCreate()
-        LogManager.getLogger("kafka").setLevel(Level.WARN)
+        LogManager.getLogger("org"). setLevel(Level.ERROR)
+        LogManager.getLogger("akka").setLevel(Level.ERROR)
+
+        pathParsingCount = parsingMinuteFolderPaths.size
+        val watch = StopWatch.mark()
         for (path <- parsingMinuteFolderPaths) {
             logger.info("run -> " + path)
             process(spark, path, path.replace(rootPath, parsingPath))
+            pathParsingSuccessCount += 1
         }
+        timeProcessing = watch.getDelay / 1000
         fs.close()
+        pushMetrics()
     }
 
+    /**
+     * parsing data
+     *
+     * @param spark: spark session
+     * @param inputPath: path to file need parse
+     * @param outputPath: path to file saving data
+     */
     def process(spark: SparkSession, inputPath: String, outputPath: String): Unit = {
         val rdd = spark.sparkContext.textFile(inputPath)
 
@@ -144,7 +184,6 @@ object SparkBatchApplication {
 
         val rdd2 = rdd.map(r => {
             val ormArticle = ormMapper.readValue[OrmArticle](r)
-            println(ormMapper.writeValueAsString(ormArticle))
             Row(
                 ormArticle.id,
                 ormArticle.url,
@@ -190,9 +229,43 @@ object SparkBatchApplication {
         df.repartition(1).write.parquet(outputPath)
     }
 
+    /**
+     * push metric to push gateway, that expose a api scraped by prometheus
+     */
+    def pushMetrics(): Unit = {
+        val pushGateway = new PushGateway(gatewayProps.getProperty("prometheus.gateway"))
+        val registry = new CollectorRegistry
+        val pathParsingCountMetric = CustomGauge.build.name("path_parsing_count")
+            .help("count number of path need parse parse")
+            .register(registry)
+        val pathParsingSuccessCountMetric = CustomGauge.build.name("path_parsing_success_count")
+            .help("count number of path parsing success")
+            .register(registry)
+        val timeProcessingMetric = CustomGauge.build.name("time_processing")
+            .help("measure processing time")
+            .register(registry)
+        pathParsingCountMetric.set(pathParsingCount)
+        pathParsingSuccessCountMetric.set(pathParsingSuccessCount)
+        timeProcessingMetric.set(timeProcessing)
+        try pushGateway.pushAdd(registry, "batch_crawler_parsing")
+        catch {
+            case e: IOException =>
+                e.printStackTrace()
+        }
+    }
+
+    /**
+     * configPath: path to gateway prometheus config file
+     * rootPath: path to file need parse
+     * parsingPath: path to file saving data
+     *      ex: spark-submit --master local[*] pluto-spark-stream-1.0.0.jar  push-gateway.properties  /user/linhnv52/crawler /user/linhnv52/crawler_parsing
+     *
+     * @param args: configPath rootPath parsingPath
+     */
     def main(args: Array[String]): Unit = {
-        val rootPath = args(0)
-        val parsingPath = args(1)
-        run(rootPath, parsingPath)
+        val configPath = args(0)
+        val rootPath = args(1)
+        val parsingPath = args(2)
+        run(configPath, rootPath, parsingPath)
     }
 }
