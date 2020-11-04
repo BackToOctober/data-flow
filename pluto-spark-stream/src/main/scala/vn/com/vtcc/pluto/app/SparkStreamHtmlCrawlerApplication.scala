@@ -145,7 +145,6 @@ object SparkStreamHtmlCrawlerApplication extends {
                 // 4. send some metric
                 try {
                     val timeStamp = System.currentTimeMillis()
-                    val client = connectorFactory.createConnect()
                     val recordsCountAllMetric = LogCountMetricFactory.init().createMetric("crawler.html.stream.rdd.count")
                     recordsCountAllMetric
                         .setTimeStamp(timeStamp)
@@ -177,13 +176,13 @@ object SparkStreamHtmlCrawlerApplication extends {
                         ESUtils.putData(client, esIndexMonitor, JacksonMapper.parseToString(partitionCountMetric))
                     }
                     ESUtils.putData(client, esIndexMonitor, JacksonMapper.parseToString(partitionCountAllMetric))
-                    client.close()
                 } catch {
                     case e: Exception => {
                         println("--> error")
                         e.printStackTrace()
                     }
                 }
+                client.close()
             } catch {
                 case e: IOException => {
                     e.printStackTrace()
@@ -217,7 +216,7 @@ object SparkStreamHtmlCrawlerApplication extends {
             , appProps.getProperty("elasticsearch.socket.timeout", "50000"))
 
         // 3. mapping index
-        val mappingEsIndexJson = new JSONObject("{\n    \"properties\": {\n        \"url\": {\n            \"type\": \"text\"\n        },\n        \"html\": {\n            \"type\": \"text\",\n            \"index\": false\n        },\n        \"content\": {\n            \"type\": \"text\",\n            \"index\": false\n        },\n        \"published_time\": {\n            \"type\": \"date\",\n            \"format\": \"yyyy-MM-dd HH:mm:ss||yyyy/MM/dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n        },\n        \"created_time\": {\n            \"type\": \"date\",\n            \"format\": \"yyyy-MM-dd HH:mm:ss||yyyy/MM/dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n        }\n    }\n}")
+        val mappingEsIndexJson = new JSONObject("{\n    \"properties\": {\n        \"url\": {\n            \"type\": \"keyword\"\n        },\n        \"html\": {\n            \"type\": \"text\",\n            \"index\": false\n        },\n        \"content\": {\n            \"type\": \"text\",\n            \"index\": false\n        },\n        \"published_time\": {\n            \"type\": \"date\",\n            \"format\": \"yyyy-MM-dd HH:mm:ss||yyyy/MM/dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n        },\n        \"created_time\": {\n            \"type\": \"date\",\n            \"format\": \"yyyy-MM-dd HH:mm:ss||yyyy/MM/dd HH:mm:ss||yyyy-MM-dd||epoch_millis\"\n        }\n    }\n}")
         val mappingEsIndex = mappingEsIndexJson.toMap
 
         // 4. run
