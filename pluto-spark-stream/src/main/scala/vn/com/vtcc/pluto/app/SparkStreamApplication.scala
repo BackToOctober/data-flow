@@ -62,6 +62,7 @@ object SparkStreamApplication {
             rdd2.saveAsTextFile(path.toString)
 
             // [INFO]: send some metric
+
             try {
                 val timeStamp = System.currentTimeMillis()
                 val client = connectorFactory.createConnect()
@@ -110,7 +111,10 @@ object SparkStreamApplication {
     def run(configPath: String): Unit = {
         appProps = FileUtils.readPropertiesFile(configPath)
         var kafkaConfig: Map[String, Object] = new immutable.HashMap[String, Object]()
-        kafkaConfig = kafkaConfig.+("group.id" -> appProps.getProperty("kafka.group.id"))
+        val groupId =  appProps.getProperty("kafka.group.id") + System.currentTimeMillis().toString
+        println(" >> groupId = " + groupId)
+
+        kafkaConfig = kafkaConfig.+("group.id" -> groupId)
             .+("enable.auto.commit" -> appProps.getProperty("kafka.enable.auto.commit", "true"))
             .+("bootstrap.servers" -> appProps.getProperty("kafka.bootstrap.servers"))
             .+("key.deserializer" -> classOf[ByteArrayDeserializer])
@@ -118,7 +122,6 @@ object SparkStreamApplication {
             .+("auto.offset.reset" -> appProps.getProperty("kafka.auto.offset.reset", "latest"))
             .+("request.timeout.ms" -> appProps.getProperty("kafka.request.timeout.ms","70000"))
             .+("session.timeout.ms" -> appProps.getProperty("kafka.session.timeout.ms", "60000"))
-
         val clientProps = new Properties()
         clientProps.setProperty("elasticsearch.host", appProps.getProperty("elasticsearch.host"))
         clientProps.setProperty("elasticsearch.connection.request.timeout"

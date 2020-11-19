@@ -196,7 +196,9 @@ object SparkStreamHtmlCrawlerApplication extends {
 
         // 1. kafka config
         var kafkaConfig: Map[String, Object] = new immutable.HashMap[String, Object]()
-        kafkaConfig = kafkaConfig.+("group.id" -> appProps.getProperty("kafka.group.id"))
+        val groupId =  appProps.getProperty("kafka.group.id") + System.currentTimeMillis().toString
+        println(" >> groupId = " + groupId)
+        kafkaConfig = kafkaConfig.+("group.id" -> groupId)
             .+("enable.auto.commit" -> appProps.getProperty("kafka.enable.auto.commit", "true"))
             .+("bootstrap.servers" -> appProps.getProperty("kafka.bootstrap.servers"))
             .+("key.deserializer" -> classOf[StringDeserializer])
