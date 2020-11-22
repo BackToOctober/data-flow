@@ -3,12 +3,14 @@ package vn.com.vtcc.pluto.schema
 import java.io.IOException
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util
+import java.util.{ArrayList, Collection, Date, List}
 
 import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}
 import com.fasterxml.jackson.core.{JsonGenerator, JsonParser}
 import com.fasterxml.jackson.databind.annotation.{JsonDeserialize, JsonSerialize}
 import com.fasterxml.jackson.databind.{DeserializationContext, JsonDeserializer, JsonSerializer, SerializerProvider}
+import org.apache.commons.lang3.StringUtils
 
 class OrmCustomDateSerializer extends JsonSerializer[Date] {
 
@@ -188,3 +190,172 @@ class OrmArticle() extends Serializable {
     val newspaperTitle: String = null
 
 }
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+class OrmArticle2() extends Serializable {
+    @JsonProperty
+    val id: String = null
+
+    @JsonProperty
+    val url: String = null
+
+    @JsonProperty
+    val domain: String = null
+
+    @JsonProperty("source_id")
+    val sourceId: Integer = null
+
+    @JsonProperty("first_crawled_time")
+    @JsonSerialize(using = classOf[OrmCustomTimestampSerializer])
+    @JsonDeserialize(using = classOf[OrmCustomTimestampDeSerializer])
+    val firstCrawledTime: Timestamp = null
+
+    @JsonProperty("last_crawled_time")
+    @JsonSerialize(using = classOf[OrmCustomTimestampSerializer])
+    @JsonDeserialize(using = classOf[OrmCustomTimestampDeSerializer])
+    val lastCrawledTime: Timestamp = null
+
+    @JsonProperty("published_time")
+    @JsonSerialize(using = classOf[OrmCustomTimestampSerializer])
+    @JsonDeserialize(using = classOf[OrmCustomTimestampDeSerializer])
+    val publishedTime: Timestamp = null
+
+    @JsonProperty("published_timestamp")
+    val publishedTimestamp: java.lang.Long = null
+
+    @JsonProperty("created_time")
+    @JsonSerialize(using = classOf[OrmCustomTimestampSerializer])
+    @JsonDeserialize(using = classOf[OrmCustomTimestampDeSerializer])
+    val createdTime: Timestamp = null
+
+    @JsonProperty("last_updated_time")
+    @JsonSerialize(using = classOf[OrmCustomTimestampSerializer])
+    @JsonDeserialize(using = classOf[OrmCustomTimestampDeSerializer])
+    val lastUpdatedTime: Timestamp = null
+
+    @JsonProperty("title")
+    val title: String = null
+
+    @JsonProperty("summary")
+    val summary: String = null
+
+    @JsonProperty("content")
+    val content: String = null
+
+    @JsonProperty("image_sources")
+    val imageSources: Array[String] = null
+
+    @JsonProperty("video_sources")
+    val videoSources: Array[String] = null
+
+    @JsonProperty("similar_master")
+    val similarMaster: Integer = null
+
+    @JsonProperty("similar_group_id")
+    val similarGroupId: String = null
+
+    @JsonProperty("time_type")
+    val timeType: Integer = null
+
+    @JsonProperty("removed_by_host")
+    val removedByHost: Integer = null
+
+    @JsonProperty("version")
+    val version: Integer = null
+
+    @JsonProperty("total_version")
+    val totalVersion: Integer = null
+
+    @JsonProperty("different_percent")
+    val differentPercent: java.lang.Double = null
+
+    @JsonProperty("time_last_changed")
+    @JsonSerialize(using = classOf[OrmCustomTimestampSerializer])
+    @JsonDeserialize(using = classOf[OrmCustomTimestampDeSerializer])
+    val timeLastChanged: Timestamp = null
+
+    @JsonProperty("classifications")
+    val classifications: Array[Integer] = null
+
+    @JsonProperty("article_type")
+    val articleType: String = null
+
+    @JsonProperty("post_id")
+    val postId: String = null
+
+    @JsonProperty("comment_id")
+    val commentId: String = null
+
+    @JsonProperty("reply_id")
+    val replyId: String = null
+
+    @JsonProperty("like_count")
+    val likeCount: java.lang.Long = null
+
+    @JsonProperty("unlike_count")
+    val unlikeCount: java.lang.Long = null
+
+    @JsonProperty("share_count")
+    val shareCount: java.lang.Long = null
+
+    @JsonProperty("comment_count")
+    val commentCount: java.lang.Long = null
+
+    @JsonProperty("reply_count")
+    val replyCount: java.lang.Long = null
+
+    @JsonProperty("view_count")
+    val viewCount: java.lang.Long = null
+
+    @JsonProperty("share_content")
+    val shareContent: Array[String] = null
+
+    @JsonProperty("author_id")
+    val authorId: String = null
+
+    @JsonProperty("wall_id")
+    val wallId: String = null
+
+    @JsonProperty("author_display_name")
+    val authorDisplayName: String = null
+
+    @JsonProperty("author_year_of_birth")
+    val authorYearOfBirth: Integer = null
+
+    @JsonProperty("author_gender")
+    val authorGender: Integer = null
+
+    @JsonProperty("wall_display_name")
+    val wallDisplayName: String = null
+
+    @JsonProperty("location")
+    val location: String = null
+
+    @JsonProperty("video_frames")
+    val videoFrames: Array[VideoFrame] = null
+
+    @JsonProperty("reach_count")
+    val reachCount: java.lang.Double = null
+
+    @JsonProperty(value = "tags")
+    val tags: Array[Integer] = null
+
+    @JsonProperty(value = "kpi_tags")
+    val kpiTags: Array[Integer] = null
+
+    @JsonProperty(value = "mic_parse")
+    val micParse: Integer = null
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+class VideoFrame extends Serializable {
+    @JsonProperty(value = "text")
+    val text: String = null
+
+    @JsonProperty(value = "start")
+    val start: java.lang.Double = null
+
+    @JsonProperty(value = "end")
+    val end: java.lang.Double = null
+}
+

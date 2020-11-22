@@ -3,6 +3,7 @@ package vn.com.vtcc.pluto.app
 import java.io.IOException
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
+import java.util
 import java.util.{Calendar, Date, Properties}
 
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -16,9 +17,11 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SparkSession, types}
 import vn.com.vtcc.pluto.core.monitor.prometheus.CustomGauge
 import vn.com.vtcc.pluto.core.utils.{FileUtils, HdfsUtils, StopWatch}
-import vn.com.vtcc.pluto.schema.OrmArticle
+import vn.com.vtcc.pluto.schema.{OrmArticle2, VideoFrame}
 
 import scala.collection.mutable.ListBuffer
+import collection.JavaConversions._
+
 
 /**
  * batch crawler parsing daily job
@@ -32,9 +35,11 @@ object SparkBatchApplication {
             StructField(name = "id", dataType = StringType, nullable = true),
             StructField(name = "url", dataType = StringType, nullable = true),
             StructField(name = "domain", dataType = StringType, nullable = true),
-            StructField(name = "source_id", dataType = StringType, nullable = true),
-            StructField(name = "first_crawl_time", dataType = TimestampType, nullable = true),
+            StructField(name = "source_id", dataType = IntegerType, nullable = true),
+            StructField(name = "first_crawled_time", dataType = TimestampType, nullable = true),
+                StructField(name = "last_crawled_time", dataType = TimestampType, nullable = true),
             StructField(name = "published_time", dataType = TimestampType, nullable = true),
+                StructField(name = "published_timestamp", dataType = LongType, nullable = true),
             StructField(name = "created_time", dataType = TimestampType, nullable = true),
             StructField(name = "last_updated_time", dataType = TimestampType, nullable = true),
             StructField(name = "title", dataType = StringType, nullable = true),
@@ -42,17 +47,26 @@ object SparkBatchApplication {
             StructField(name = "content", dataType = StringType, nullable = true),
             StructField(name = "image_sources", dataType = ArrayType(StringType), nullable = true),
             StructField(name = "video_sources", dataType = ArrayType(StringType), nullable = true),
-            StructField(name = "similar_master", dataType = StringType, nullable = true),
+            StructField(name = "similar_master", dataType = IntegerType, nullable = true),
             StructField(name = "similar_group_id", dataType = StringType, nullable = true),
+                StructField(name = "time_type", dataType = IntegerType, nullable = true),
+                StructField(name = "removed_by_host", dataType = IntegerType, nullable = true),
+                StructField(name = "version", dataType = IntegerType, nullable = true),
+                StructField(name = "total_version", dataType = IntegerType, nullable = true),
+                StructField(name = "different_percent", dataType = DoubleType, nullable = true),
+                StructField(name = "time_last_changed", dataType = TimestampType, nullable = true),
+                StructField(name = "classifications", dataType = ArrayType(IntegerType), nullable = true),
             StructField(name = "article_type", dataType = StringType, nullable = true),
             StructField(name = "post_id", dataType = StringType, nullable = true),
             StructField(name = "comment_id", dataType = StringType, nullable = true),
             StructField(name = "reply_id", dataType = StringType, nullable = true),
             StructField(name = "like_count", dataType = LongType, nullable = true),
+                StructField(name = "unlike_count", dataType = LongType, nullable = true),
             StructField(name = "share_count", dataType = LongType, nullable = true),
             StructField(name = "comment_count", dataType = LongType, nullable = true),
             StructField(name = "reply_count", dataType = LongType, nullable = true),
             StructField(name = "view_count", dataType = LongType, nullable = true),
+                StructField(name = "share_content", dataType = ArrayType(StringType), nullable = true),
             StructField(name = "author_id", dataType = StringType, nullable = true),
             StructField(name = "wall_id", dataType = StringType, nullable = true),
             StructField(name = "author_display_name", dataType = StringType, nullable = true),
@@ -60,12 +74,11 @@ object SparkBatchApplication {
             StructField(name = "author_gender", dataType = IntegerType, nullable = true),
             StructField(name = "wall_display_name", dataType = StringType, nullable = true),
             StructField(name = "location", dataType = StringType, nullable = true),
+                StructField(name = "video_frames", dataType = ArrayType(StringType), nullable = true),
+                StructField(name = "reach_count", dataType = DoubleType, nullable = true),
             StructField(name = "tags", dataType = ArrayType(IntegerType), nullable = true),
-            StructField(name = "newspaper_name", dataType = StringType, nullable = true),
-            StructField(name = "newspaper_index", dataType = StringType, nullable = true),
-            StructField(name = "newspaper_page_index", dataType = StringType, nullable = true),
-            StructField(name = "newspaper_page_count", dataType = IntegerType, nullable = true),
-            StructField(name = "newspaper_title", dataType = StringType, nullable = true)
+                StructField(name = "kpi_tags", dataType = ArrayType(IntegerType), nullable = true),
+                StructField(name = "mic_parse", dataType = IntegerType, nullable = true)
         )
     )
 
@@ -183,14 +196,28 @@ object SparkBatchApplication {
         val ormMapper = new ObjectMapper() with ScalaObjectMapper with Serializable
 
         val rdd2 = rdd.map(r => {
-            val ormArticle = ormMapper.readValue[OrmArticle](r)
+            val ormArticle = ormMapper.readValue[OrmArticle2](r)
+            val videoFrames = ormArticle.videoFrames
+            var videoFramesParse: Array[String] = null
+            if (videoFrames != null) {
+                videoFramesParse = new Array[String](videoFrames.length)
+                var c = 0
+                for (videoFrame <- videoFrames) {
+                    if (videoFrame != null) {
+                        videoFramesParse(c) = ormMapper.writeValueAsString(videoFrame)
+                    }
+                    c += 1
+                }
+            }
             Row(
                 ormArticle.id,
                 ormArticle.url,
                 ormArticle.domain,
                 ormArticle.sourceId,
                 ormArticle.firstCrawledTime,
+                    ormArticle.lastCrawledTime,
                 ormArticle.publishedTime,
+                    ormArticle.publishedTimestamp,
                 ormArticle.createdTime,
                 ormArticle.lastUpdatedTime,
                 ormArticle.title,
@@ -200,15 +227,24 @@ object SparkBatchApplication {
                 ormArticle.videoSources,
                 ormArticle.similarMaster,
                 ormArticle.similarGroupId,
+                    ormArticle.timeType,
+                    ormArticle.removedByHost,
+                    ormArticle.version,
+                    ormArticle.totalVersion,
+                    ormArticle.differentPercent,
+                    ormArticle.timeLastChanged,
+                    ormArticle.classifications,
                 ormArticle.articleType,
                 ormArticle.postId,
                 ormArticle.commentId,
                 ormArticle.replyId,
                 ormArticle.likeCount,
+                    ormArticle.unlikeCount,
                 ormArticle.shareCount,
                 ormArticle.commentCount,
                 ormArticle.replyCount,
                 ormArticle.viewCount,
+                    ormArticle.shareContent,
                 ormArticle.authorId,
                 ormArticle.wallId,
                 ormArticle.authorDisplayName,
@@ -216,12 +252,11 @@ object SparkBatchApplication {
                 ormArticle.authorGender,
                 ormArticle.wallDisplayName,
                 ormArticle.location,
+                    videoFramesParse,
+                    ormArticle.reachCount,
                 ormArticle.tags,
-                ormArticle.newspaperName,
-                ormArticle.newspaperIndex,
-                ormArticle.newspaperPageIndex,
-                ormArticle.newspaperPageCount,
-                ormArticle.newspaperTitle
+                    ormArticle.kpiTags,
+                    ormArticle.micParse
             )
         })
 
