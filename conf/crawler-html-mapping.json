@@ -1,0 +1,23 @@
+{
+    "properties": {
+        "url": {
+            "type": "keyword"
+        },
+        "html": {
+            "type": "text",
+            "index": false
+        },
+        "content": {
+            "type": "text",
+            "index": false
+        },
+        "published_time": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss||yyyy/MM/dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        },
+        "created_time": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss||yyyy/MM/dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        }
+    }
+}
